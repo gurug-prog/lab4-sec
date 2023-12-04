@@ -1,6 +1,8 @@
 'use strict';
 
-const port = 3000;
+const dotenv = require('dotenv');
+dotenv.config();
+
 const express = require('express');
 const onFinished = require('on-finished');
 const bodyParser = require('body-parser');
@@ -43,17 +45,17 @@ app.use((req, res, next) => {
 });
 
 app.get('/', (req, res) => {
-  // if (req.session.username) {
-  //   return res.json({
-  //     username: req.session.username,
-  //     logout: 'http://localhost:3000/logout'
-  //   });
-  // }
+  if (req.session.username) {
+    return res.json({
+      username: req.session.username,
+      logout: 'http://localhost:3000/logout'
+    });
+  }
   res.sendFile(path.join(__dirname+'/index.html'));
 });
 
 app.get('/logout', (req, res) => {
-  // sessions.destroy(req, res);
+  sessions.destroy(req, res);
   res.redirect('/');
 });
 
@@ -63,9 +65,9 @@ app.post('/api/login', async (req, res) => {
     const response = await auth.auth0Login(login, password);
     if (response) {
       console.log(response);
-      // req.session.username = login;
-      // req.session.login = login;
-      // res.json({ token: req.sessionId });
+      req.session.username = login;
+      req.session.login = login;
+      res.json({ token: req.sessionId });
     }
   } catch (error) {
     console.error(error);
@@ -74,6 +76,6 @@ app.post('/api/login', async (req, res) => {
   res.status(401).send();
 });
 
-app.listen(port, () => {
-  console.log(`App listening on port ${port}`)
+app.listen(process.env.PORT, () => {
+  console.log(`App listening on port ${process.env.PORT}`)
 });
