@@ -58,7 +58,6 @@ const auth0LoginRefreshToken = (refreshToken) => {
   });
 };
 
-
 module.exports = {
   auth0Login,
   auth0LoginRefreshToken

@@ -44,13 +44,23 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get('/', (req, res) => {
-  if (req.session.username) {
+app.get('/', async (req, res) => {
+  console.log('GET /')
+  if (req.session.access_token) {
+    const tokenLifetime = req.session.expires_at - Math.floor(Date.now() / 1000);
+    if (tokenLifetime <= process.env.TOKEN_REFRESH_LIFETIME) {
+      const response = await auth.auth0LoginRefreshToken(req.session.refresh_token);
+      const responseObj = JSON.parse(response);
+      req.session.access_token = responseObj.access_token;
+      req.session.expires_at = Math.floor(Date.now() / 1000) + responseObj.expires_in;
+    }
+
     return res.json({
       username: req.session.username,
       logout: 'http://localhost:3000/logout'
     });
   }
+
   res.sendFile(path.join(__dirname+'/index.html'));
 });
 
@@ -63,10 +73,16 @@ app.post('/api/login', async (req, res) => {
   const { login, password } = req.body;
   try {
     const response = await auth.auth0Login(login, password);
-    if (response) {
+    const responseObj = JSON.parse(response);
+    if (responseObj) {
       console.log(response);
+
       req.session.username = login;
       req.session.login = login;
+      req.session.access_token = responseObj.access_token;
+      req.session.expires_at = Math.floor(Date.now() / 1000) + responseObj.expires_in;
+      req.session.refresh_token = responseObj.refresh_token;
+
       res.json({ token: req.sessionId });
     }
   } catch (error) {
